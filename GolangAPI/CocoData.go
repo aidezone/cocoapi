@@ -116,7 +116,7 @@ type SegmentationRLE struct {
 }
 
 type SegmentationRLEUncompressed struct {
-	Counts []float32 `json:"counts,omitempty"`
+	Counts []uint32 `json:"counts,omitempty"`
 	Size   [2]uint32 `json:"size,omitempty"`
 }
 
