@@ -1,8 +1,7 @@
-package models
+package coco
 
 import (
 	"encoding/json"
-	// "fmt"
 	"errors"
 )
 
@@ -35,37 +34,70 @@ type License struct {
 	URL  string `json:"url,omitempty"`
 }
 
-type DataFormats interface {
-	ObjectDetection | StuffSegmentation | PanopticSegmentation
+type CocoData struct {
+	Info        Information    `json:"info,omitempty"`
+	Images      []Image        `json:"images,omitempty"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+	Licenses    []License      `json:"licenses,omitempty"`
+
+	// ImageCaption does not have this property
+	Categories  []Categories `json:"categories,omitempty"`
 }
 
+//Annotation is the object detection annotation
+type Annotation struct {
+	ImageID      int        `json:"image_id,omitempty"`
 
-// type Segment interface {
-// 	SegmentationRLE | SegmentationRLEUncompressed | SegmentationPolygon
-// }
+	// PanopticSegmentation does not have this property
+	ID           int        `json:"id,omitempty"`
 
-// /*
+	// PanopticSegmentation and ImageCaption does not have this property
+	CategoryID   int        `json:"category_id,omitempty"`
+	Segmentation Segment    `json:"segmentation,omitempty"`
+	Area         float32    `json:"area,omitempty"`
+	Bbox         [4]float32 `json:"bbox,omitempty"`
 
-// These are helpers to work with the shared json catagory.
+	// PanopticSegmentation and StuffSegmentation and ImageCaption does not have this property
+	Iscrowd      byte       `json:"iscrowd,omitempty"`
 
+	// ImageCaption own property
+	Caption      string     `json:"caption,omitempty"`
 
-// */
+	// KeypointDetection own property
+	Keypoints    []float32  `json:"keypoints,omitempty"`
+	NumKeypoints int        `json:"num_keypoints,omitempty"`
 
-// //RLEgo is a struct that will take the info from json to an RLE format
-// type RLEgo struct {
-// 	Counts []uint32
-// 	Size   []uint32
-// }
+	// PanopticSegmentation own property
+	FileName     string          `json:"file_name,omitempty"`
+	SegmentsInfo []PSSegmentInfo `json:"segments_info,omitempty"`
+}
 
-// //Polygon from what ive seen looks to be in the form of [1][x0, x1,x2,x3 . . .] but it could be more on the first part.
-// type Polygon [][]float32
+//Edge desribes a 2 point edge Probably [x,y] I haven't tested it yet
+type Edge [2]uint32
 
-// //SegmentationHelper is used for segmentation
-// type SegmentationHelper struct {
-// 	Poly Polygon
-// 	Rle  RLEgo
-// }
+//Categories is the object detection categories.
+type Categories struct {
+	ID            int    `json:"id,omitempty"`
+	Name          string `json:"name,omitempty"`
+	Supercategory string `json:"supercategory,omitempty"`
 
+	// KeypointDetection own property
+	Keypoints     []string `json:"keypoints,omitempty"`
+	Skeleton      []Edge   `json:"skeleton,omitempty"`
+
+	// PanopticSegmentation own property
+	Isthing       byte      `json:"isthing,omitempty"`
+	Color         [3]uint32 `json:"color,omitempty"`
+}
+
+//PSSegmentInfo contains segment info for the annotation
+type PSSegmentInfo struct {
+	ID         int        `json:"id,omitempty"`
+	CategoryID int        `json:"category_id,omitempty"`
+	Area       int        `json:"area,omitempty"`
+	Bbox       [4]float32 `json:"bbox,omitempty"`
+	Iscrowd    byte       `json:"iscrowd,omitempty"`
+}
 
 //Segment interface a placeholder for Segmentation data structures
 //It can either be an RLE or a Polygon
@@ -112,7 +144,6 @@ func (s *Segment) UnmarshalJSON(jBytes []byte) error {
 }
 
 func decodeToSegmentation(jBytes []byte) (SegmentationHelper, error) {
-	// fmt.Printf("parsing nested json %s \n", string(jBytes))
 
 	var err error;
 	segRleUnc := &SegmentationRLEUncompressed{}
