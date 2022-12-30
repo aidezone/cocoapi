@@ -27,11 +27,12 @@ type CocoApi struct {
 	imgMap map[int]Image
 	annMap map[int]Annotation
 	catMap map[int]Categories
+	// catNameMap map[int]Categories
 	imgToAnnMap map[int][]int
-	// annToImgMap map[int][]uint32
-	catToAnnMap map[int][]int
-	// annToCatMap map[int][]uint32
-	imgToCatMap map[int][]int
+	// annToImgMap map[int][]int
+	// catToAnnMap map[int][]int
+	// annToCatMap map[int][]int
+	// imgToCatMap map[int][]int
 	catToImgMap map[int][]int
 }
 
@@ -40,9 +41,10 @@ func NewCocoApi(datasetMeta []byte) *CocoApi {
 		imgMap: make(map[int]Image),
 		annMap: make(map[int]Annotation),
 		catMap: make(map[int]Categories),
+		// catNameMap: make(map[string]Categories),
 		imgToAnnMap: make(map[int][]int),
-		catToAnnMap: make(map[int][]int),
-		imgToCatMap: make(map[int][]int),
+		// catToAnnMap: make(map[int][]int),
+		// imgToCatMap: make(map[int][]int),
 		catToImgMap: make(map[int][]int),
 	}
 	cocoApi.init(datasetMeta)
@@ -99,7 +101,8 @@ func (api *CocoApi) init(datasetMeta []byte) {
 	}
 
 	cats := api.datasetMeta.Categories
-	for i := 0; i < len(cats); i++ {		
+	for i := 0; i < len(cats); i++ {
+		// api.catNameMap[cats[i].Name] = cats[i]
 		api.catMap[cats[i].ID] = cats[i]
 	}
 
@@ -107,12 +110,10 @@ func (api *CocoApi) init(datasetMeta []byte) {
 	for i := 0; i < len(anns); i++ {		
 		api.annMap[anns[i].ID] = anns[i]
 		api.imgToAnnMap[anns[i].ImageID] = append(api.imgToAnnMap[anns[i].ImageID], anns[i].ID)
-		api.catToAnnMap[anns[i].CategoryID] = append(api.imgToAnnMap[anns[i].CategoryID], anns[i].ID)
-		api.imgToCatMap[anns[i].ImageID] = append(api.imgToAnnMap[anns[i].ImageID], anns[i].CategoryID)
-		api.catToAnnMap[anns[i].CategoryID] = append(api.imgToAnnMap[anns[i].CategoryID], anns[i].ImageID)
+		// api.catToAnnMap[anns[i].CategoryID] = append(api.catToAnnMap[anns[i].CategoryID], anns[i].ID)
+		// api.imgToCatMap[anns[i].ImageID] = append(api.imgToCatMap[anns[i].ImageID], anns[i].CategoryID)
+		api.catToImgMap[anns[i].CategoryID] = append(api.catToImgMap[anns[i].CategoryID], anns[i].ImageID)
 	}
-
-	// fmt.Println(api.datasetMeta.Info)
 }
 
 
@@ -164,22 +165,64 @@ func (api *CocoApi) GetAnnIds(imgIds, catIds, areaRng []int, iscrowd byte) (ids 
 }
 
 func (api *CocoApi) GetCatIds(names, supCatNames []string) (ids []int) {
+    
+    nameMap := make(map[string]byte)
+	for i := 0; i < len(names); i++ {
+		nameMap[names[i]] = 1
+	}
+	superNameMap :=  make(map[string]byte)
+	for i := 0; i < len(supCatNames); i++ {
+		superNameMap[supCatNames[i]] = 1
+	}
+
+	for _, v := range api.catMap {
+		if len(names) > 0 {
+			if _, ok := nameMap[v.Name]; !ok {
+				continue
+			}
+		}
+		if len(supCatNames) > 0 {
+			if _, ok := superNameMap[v.Supercategory]; !ok {
+				continue
+			}
+		}
+		ids = append(ids, v.ID)
+	}
+
 	return
 }
 
 func (api *CocoApi) GetImgIds(catIds []int) (ids []int) {
+
+	if len(catIds) < 1 {
+		ids = getImageMapKeys(api.imgMap)
+		return
+	}
+	for i := 0; i < len(catIds); i++ {
+		ids = append(ids, api.catToImgMap[catIds[i]]...)
+	}
+	ids = removeDuplicates(ids)
 	return
 }
 
 func (api *CocoApi) LoadAnns(ids []int) (list []Annotation) {
+	for _, v := range ids {
+		list = append(list, api.annMap[v])
+	}
 	return
 }
 
 func (api *CocoApi) LoadCats(ids []int) (list []Categories) {
+	for _, v := range ids {
+		list = append(list, api.catMap[v])
+	}
 	return
 }
 
 func (api *CocoApi) LoadImgs(ids []int) (list []Image) {
+	for _, v := range ids {
+		list = append(list, api.imgMap[v])
+	}
 	return
 }
 
@@ -187,9 +230,32 @@ func (api *CocoApi) ShowAnns(ids []int) ([]interface{}, error) {
 	return nil, nil
 }
 
+func removeDuplicates(ids []int) (filteredIds []int) {
+    if len(ids) == 0 {
+        return
+    }
 
+    idMap := make(map[int]byte)
+	for _, v:= range ids{
+	    idMap[v] = 1
+	}
 
+	j := 0
+	keys := make([]int, len(idMap))
+	for k := range idMap {
+		keys[j] = k
+		j++
+	}
+	filteredIds = keys
+	return
+}
 
-
-
-
+func getImageMapKeys(m map[int]Image) []int {
+	j := 0
+	keys := make([]int, len(m))
+	for k := range m {
+		keys[j] = k
+		j++
+	}
+	return keys
+}

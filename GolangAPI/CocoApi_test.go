@@ -34,25 +34,6 @@ func TestMain(m *testing.M) {
     fmt.Println("end")
 }
 
-func Test_GetAnnIds(t *testing.T) {
-	// without filter
-	var anns []int
-
-	anns = datasetMetaObj.GetAnnIds(nil, nil, nil, 0)
-    fmt.Println("anns len: ", len(anns))
-
-    // filter by imgIds
-	anns = datasetMetaObj.GetAnnIds([]int{397133, 87038, 6818}, nil, nil, 0)
-    fmt.Println("anns len: ", len(anns), anns)
-
-    anns = datasetMetaObj.GetAnnIds([]int{397133, 87038, 6818}, []int{112, 123}, nil, 0)
-    fmt.Println("anns len: ", len(anns), anns)
-
-    anns = datasetMetaObj.GetAnnIds([]int{397133, 87038, 6818}, []int{112, 123}, []int{17008, 17010}, 0)
-    fmt.Println("anns len: ", len(anns), anns)
-}
-
-
 func Test_EncodeMaskToSegment(t *testing.T) {
 	size := [2]uint32{5, 6} // segmentation.size
 	originMask := []byte{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,1,0,1,1}
@@ -98,8 +79,109 @@ func Test_encodeRLE(t *testing.T) {
 	fmt.Println("rle.Decode() => decodedMask", decodedMask)
 }
 
+func Test_GetAnnIds(t *testing.T) {
+	// without filter
+	var anns []int
 
+	anns = datasetMetaObj.GetAnnIds(nil, nil, nil, 0)
+    fmt.Println("anns len: ", len(anns))
 
+    // filter by imgIds
+	anns = datasetMetaObj.GetAnnIds([]int{397133, 87038, 6818}, nil, nil, 0)
+    fmt.Println("anns len: ", len(anns), anns)
+
+    anns = datasetMetaObj.GetAnnIds([]int{397133, 87038, 6818}, []int{112, 123}, nil, 0)
+    fmt.Println("anns len: ", len(anns), anns)
+
+    anns = datasetMetaObj.GetAnnIds([]int{397133, 87038, 6818}, []int{112, 123}, []int{17008, 17010}, 0)
+    fmt.Println("anns len: ", len(anns), anns)
+}
+
+func Test_GetCatIds(t *testing.T) {
+	// without filter
+	var resultIds []int
+
+	var names = []string{
+		"banner",
+		"branch",
+		"cabinet",
+		"ceiling-other",
+	}
+
+	var superNames = []string{
+		"building",
+		"furniture-stuff",
+		"ceiling",
+	}
+
+	resultIds = datasetMetaObj.GetCatIds(nil, nil)
+    fmt.Println("GetCatIds resultIds len: ", len(resultIds))
+
+    // filter by Name
+	resultIds = datasetMetaObj.GetCatIds(names, nil)
+    fmt.Println("GetCatIds resultIds len: ", len(resultIds), resultIds)
+
+    // filter by SupName
+	resultIds = datasetMetaObj.GetCatIds(nil, superNames)
+    fmt.Println("GetCatIds resultIds len: ", len(resultIds), resultIds)
+
+	// filter by Both
+	resultIds = datasetMetaObj.GetCatIds(names, superNames)
+    fmt.Println("GetCatIds resultIds len: ", len(resultIds), resultIds)
+}
+
+func Test_GetImgIds(t *testing.T) {
+	// without filter
+	var resultIds []int
+	resultIds = datasetMetaObj.GetImgIds(nil)
+    fmt.Println("GetImgIds resultIds len: ", len(resultIds))
+
+    // filter by catids
+	resultIds = datasetMetaObj.GetImgIds([]int{98, 102})
+    fmt.Println("GetImgIds resultIds len: ", len(resultIds), resultIds)
+}
+
+func Test_LoadAnns(t *testing.T) {
+	ids := datasetMetaObj.GetAnnIds([]int{397133, 87038, 6818}, []int{112, 123}, nil, 0)
+    fmt.Println("LoadAnns ids len: ", len(ids), ids)
+
+    // filter by catids
+	results := datasetMetaObj.LoadAnns(ids)
+    fmt.Println("LoadAnns result: ", len(results), results)
+}
+
+func Test_LoadCats(t *testing.T) {
+
+	var names = []string{
+		"banner",
+		"branch",
+		"cabinet",
+		"ceiling-other",
+	}
+
+	var superNames = []string{
+		"building",
+		"furniture-stuff",
+		"ceiling",
+	}
+
+	// filter by Both
+	ids := datasetMetaObj.GetCatIds(names, superNames)
+    fmt.Println("LoadCats ids len: ", len(ids), ids)
+
+    // filter by catids
+	results := datasetMetaObj.LoadCats(ids)
+    fmt.Println("LoadCats result: ", len(results), results)
+}
+
+func Test_LoadImgs(t *testing.T) {
+	ids := []int{397133, 87038, 6818}
+    fmt.Println("LoadImgs ids len: ", len(ids), ids)
+
+    // filter by catids
+	results := datasetMetaObj.LoadImgs(ids)
+    fmt.Println("LoadImgs result: ", len(results), results)
+}
 
 func Test_decoderExample(t *testing.T) {
 	var err error
