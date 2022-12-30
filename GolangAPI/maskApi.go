@@ -43,7 +43,7 @@ func rlesfree(r *RLE) {
 
 //EncodeRLE binary masks using RLE.
 //void rleEncode( RLE *R, const byte *mask, siz h, siz w, siz n );
-func EncodeRLE(mask []byte, h, w, n uint32) *RLE {
+func encodeRLE(mask []byte, h, w, n uint32) *RLE {
 	r := InitRLEs(n)
 	r.h = C.siz(h)
 	r.w = C.siz(w)
@@ -53,7 +53,7 @@ func EncodeRLE(mask []byte, h, w, n uint32) *RLE {
 
 //CompressRLE cnts using RLE.
 //void rleInit( RLE *R, siz h, siz w, siz m, uint *cnts );
-func CompressRLE(cnts []uint32, h, w uint32) *RLE {
+func compressRLE(cnts []uint32, h, w uint32) *RLE {
 	r := InitRLEs(1)
 	r.h = C.siz(h)
 	r.w = C.siz(w)

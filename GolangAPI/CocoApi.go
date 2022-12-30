@@ -9,8 +9,9 @@ import (
 
 // The following API functions are defined:
 //  CocoApi	- CocoApi api class that loads COCO annotation file and prepare data structures.
-//  DecodeMask - Decode binary mask M encoded via run-length encoding.
-//  EncodeMask - Encode binary mask M using run-length encoding.
+//  DecodeSegmentToMask - Decode binary mask M encoded via run-length encoding.
+//  EncodeMaskToSegment - Encode binary mask M using run-length encoding.
+//  EncodeRLEToSegment  - Encode binary mask M using run-length encoding.
 //  GetAnnIds  - Get ann ids that satisfy given filter conditions.
 //  GetCatIds  - Get cat ids that satisfy given filter conditions.
 //  GetImgIds  - Get img ids that satisfy given filter conditions.
@@ -48,6 +49,42 @@ func NewCocoApi(datasetMeta []byte) *CocoApi {
 	return cocoApi
 }
 
+func DecodeSegmentToMask(segmentation SegmentationHelper) (mask []byte) {
+	stype := segmentation.SegmentationType()
+	var segment *SegmentationRLE;
+	switch (stype) {
+	case "RLE":
+		segment = segmentation.(*SegmentationRLE)
+		
+	case "RLEUncompressed":
+		segmentTmp := segmentation.(*SegmentationRLEUncompressed)
+		segment = EncodeRLEToSegment(segmentTmp)
+	}
+	r := []byte(segment.Counts)
+	c := Char{C.CBytes(r)}
+	rle := c.ToRLE(segment.Size[0], segment.Size[1])
+	mask = rle.Decode()
+	return
+}
+
+func EncodeMaskToSegment(mask []byte, size [2]uint32) *SegmentationRLE {
+	rle := encodeRLE(mask, size[0], size[1], 1)
+	return rleToSegment(rle, size)
+}
+
+func EncodeRLEToSegment(segmentation *SegmentationRLEUncompressed) *SegmentationRLE {
+	rle := compressRLE(segmentation.Counts, segmentation.Size[0], segmentation.Size[1])
+	return rleToSegment(rle, segmentation.Size)
+}
+
+func rleToSegment(rle *RLE, size [2]uint32) *SegmentationRLE {
+	countsString := C.GoString((* C.char)(rle.ToChar().Cc)) // segmentation.counts
+	return &SegmentationRLE{
+		Counts: countsString,
+		Size: size,
+	}
+}
+
 func (api *CocoApi) init(datasetMeta []byte) {
 	err := json.Unmarshal(datasetMeta, &api.datasetMeta)
 	if err != nil {
@@ -78,31 +115,6 @@ func (api *CocoApi) init(datasetMeta []byte) {
 	// fmt.Println(api.datasetMeta.Info)
 }
 
-func (api *CocoApi) DecodeMask(segmentation SegmentationHelper) (mask []byte) {
-	stype := segmentation.SegmentationType()
-	switch (stype) {
-	case "RLE":
-		segmentation := segmentation.(*SegmentationRLE)
-		r := []byte(segmentation.Counts)
-		c := Char{C.CBytes(r)}
-		rle := c.ToRLE(segmentation.Size[0], segmentation.Size[1])
-		mask = rle.Decode()
-	case "RLEUncompressed":
-		segmentation := segmentation.(*SegmentationRLEUncompressed)
-		cntsRle := CompressRLE(segmentation.Counts, segmentation.Size[0], segmentation.Size[1])
-		mask = cntsRle.Decode()
-	}
-	return
-}
-
-func (api *CocoApi) EncodeMask(mask []byte, size [2]uint32) (SegmentationHelper) {
-	rle := EncodeRLE(mask, size[0], size[1], 1)
-	countsString := C.GoString((* C.char)(rle.ToChar().Cc)) // segmentation.counts
-	return &SegmentationRLE{
-		Counts: countsString,
-		Size: size,
-	}
-}
 
 func (api *CocoApi) GetAnnIds(imgIds, catIds, areaRng []int, iscrowd byte) (ids []int) {
 	var anns map[int]Annotation
