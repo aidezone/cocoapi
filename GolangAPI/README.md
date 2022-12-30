@@ -15,7 +15,7 @@ go test -v --count=1 .
 ```bash
 export CGO_ENABLED=1
 
-go get -u github.com/aidezone/cocoapi/GolangAPI
+go get -u github.com/aidezone/cocoapi@latest
 
 go mod tidy
 
@@ -27,6 +27,7 @@ go mod tidy
 package main
 
 import (
+    "io/ioutil"
     coco "github.com/aidezone/cocoapi/GolangAPI"
 )
 
@@ -38,7 +39,7 @@ func main() {
         return
     }
 
-    cocoApi := NewCocoApi(dataset);
+    cocoApi := coco.NewCocoApi(dataset);
     cocoApi.LoadAnns(cocoApi.GetAnnIds(cocoApi.GetImgIds(nil), nil, nil, 3))
 }
 
