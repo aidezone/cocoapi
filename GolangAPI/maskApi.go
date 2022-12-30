@@ -1,7 +1,7 @@
 package coco
 
 /*
-#include "maskApi.h"
+#include "../common/maskApi.c"
 #include "stdlib.h"
 
 */
