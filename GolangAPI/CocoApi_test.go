@@ -148,6 +148,10 @@ func Test_LoadAnns(t *testing.T) {
     // filter by catids
 	results := datasetMetaObj.LoadAnns(ids)
     fmt.Println("LoadAnns result: ", len(results), results)
+
+    results = datasetMetaObj.LoadAnns(datasetMetaObj.GetAnnIds(datasetMetaObj.GetImgIds(nil), nil, nil, 3))
+    fmt.Println("LoadAnns result: ", len(results))
+
 }
 
 func Test_LoadCats(t *testing.T) {
