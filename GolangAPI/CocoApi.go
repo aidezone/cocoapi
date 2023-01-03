@@ -36,8 +36,8 @@ type CocoApi struct {
 	catToImgMap map[int][]int
 }
 
-func NewCocoApi(datasetMeta []byte) *CocoApi {
-	cocoApi := &CocoApi{
+func NewCocoApi(datasetMeta []byte) (cocoApi *CocoApi, err error) {
+	cocoApi = &CocoApi{
 		imgMap: make(map[int]Image),
 		annMap: make(map[int]Annotation),
 		catMap: make(map[int]Categories),
@@ -47,8 +47,8 @@ func NewCocoApi(datasetMeta []byte) *CocoApi {
 		// imgToCatMap: make(map[int][]int),
 		catToImgMap: make(map[int][]int),
 	}
-	cocoApi.init(datasetMeta)
-	return cocoApi
+	err = cocoApi.init(datasetMeta)
+	return
 }
 
 func DecodeSegmentToMask(segmentation SegmentationHelper) (mask []byte) {
@@ -87,8 +87,8 @@ func rleToSegment(rle *RLE, size [2]uint32) *SegmentationRLE {
 	}
 }
 
-func (api *CocoApi) init(datasetMeta []byte) {
-	err := json.Unmarshal(datasetMeta, &api.datasetMeta)
+func (api *CocoApi) init(datasetMeta []byte) (err error) {
+	err = json.Unmarshal(datasetMeta, &api.datasetMeta)
 	if err != nil {
 		fmt.Println("json.unmarshal failed,err:",err)
 		return
@@ -114,6 +114,7 @@ func (api *CocoApi) init(datasetMeta []byte) {
 		// api.imgToCatMap[anns[i].ImageID] = append(api.imgToCatMap[anns[i].ImageID], anns[i].CategoryID)
 		api.catToImgMap[anns[i].CategoryID] = append(api.catToImgMap[anns[i].CategoryID], anns[i].ImageID)
 	}
+	return
 }
 
 

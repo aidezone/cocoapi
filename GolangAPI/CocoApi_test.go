@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 	// 	fmt.Println("json.unmarshal failed,err:",err)
 	// 	return
 	// }
-	datasetMetaObj = NewCocoApi(datasetMeta);
+	datasetMetaObj, _ = NewCocoApi(datasetMeta);
     m.Run()
     fmt.Println("end")
 }
