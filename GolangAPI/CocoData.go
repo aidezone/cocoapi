@@ -143,6 +143,10 @@ func (s *Segment) UnmarshalJSON(jBytes []byte) error {
 	return nil
 }
 
+func (s *Segment) MarshalJSON() ([]byte, error) {
+    return json.Marshal(s.SegmentationHelper)
+}
+
 func decodeToSegmentation(jBytes []byte) (SegmentationHelper, error) {
 
 	var err error;

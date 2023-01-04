@@ -3,9 +3,12 @@ package coco
 import (
 	"testing"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	// "coco/models"
 	"encoding/json"
+	"os/exec"
 )
 
 
@@ -47,6 +50,19 @@ func Test_DecodeSegmentToMask(t *testing.T) {
 	seg := EncodeMaskToSegment(originMask, size)
     mask := DecodeSegmentToMask(seg)
     fmt.Println("mask: ", mask)
+}
+
+func Test_DecodeSegmentToMask2(t *testing.T) {
+	counts := "Qne01U70oH0[67iIJL9Q6f0O101O00001O01O1O=BiY3KheLe0O1O01K4O20O0100O10000O11O000001O0000001O000010O00001O0001O0000000000001O00001O000010O000SJYO\\5g0aJ\\O^5d0aJ]O`5b0`J^O`5b0`J^O`5b0`J_O`5a0_JD\\5<dJD\\5<dJD\\5<dJE[5;eJFZ5:fJFZ5;eJF[59eJHZ58gJIW57iJJV57iJH\\54dJJ_55aJIa58]JHe57[JCMIj5d0WJDn5>oIDP6i00000000OZJVOIHg06Y3l0WLVOIl0P4MWLXOGl0R4LWLYOFk0S4MVLa0j3^OVLb0j3^OVLa0k3_OULa0k3_OUL`0m3_OTL`0l3ATLROIS1S4K]L4d3L\\L3e3M[L3e3M[L2f31WLOi31WLNj32VLNk32lKoNKo0Y4a0dK@\\4e11O00000O1O2bNcKlNNo0_4KeKUO00Mo0^4LeKVOONOP1^4KeKVONOOP1^4JfKWOMOOP1^4JTL5m3KSL5m3KRL6n3KQL5n3LRL4n3LRL4n3KSL5m3LRL4m3NRL2n3NRL2n3OQL1o30PL0P40PL0P40PL0o30RL0n3YOcK8`0?l3WOlK49f0j3UOXLI0R1h3UOPMj0P3VOPMk0o2UOQMk0o2UOQMk0o2TORMl0n2TORMl0m2UOSMk0m2UOSMk0m2UOSMk0m2UOTMj0l2UOUMl0j2TOVMl0j2TOVMl0j2TOVMl0j2TOVMl0j2SOWMn0h2ROXMn0g2SOYMm0g2SOYMn0f2ROZMo0e2QO[Mo0e2QO[MP1d2PO\\MP1d2PO]Mo0b2RO^Mo0a2PO`MP1`2PO`MP1`2PO`MP1`2PO`MP1`2PO`MP1`2POaMP1]2QOcMo0]2QOcMo0]2POdMP1\\2POdMQ1[2oNeMQ1[2oNeMQ1[2nNfMS1Y2mNgMS1X2oNgMQ1Y2oNgMQ1Y2oNgMQ1Y2oNhMP1X2POhMP1W2QOiMo0W2QOiMo0W2POjMQ1U2oNkMQ1U2oNkMQ1U2nNlMR1S2oNmMQ1S2oNmMQ1S2oNmMP1T2POlMo0U2QOlMh0Y2XOlMO^NKl36hKMg690J6000O1000O10000000O10O10000000000O010000O100000O10000000000O01001O3M1O0O012N[n1"
+	for i:=0; i< 1000; i++ {
+		mask := DecodeSegmentToMask(&SegmentationRLE{
+			Counts: counts,
+			Size: [2]uint32{375, 500},
+		})
+	    fmt.Println("mask: ", len(mask), i)
+	}
+	
+
 }
 
 func Test_compressRLE(t *testing.T) {
@@ -186,6 +202,104 @@ func Test_LoadImgs(t *testing.T) {
 	results := datasetMetaObj.LoadImgs(ids)
     fmt.Println("LoadImgs result: ", len(results), results)
 }
+
+func Test_createLimitDataset(t *testing.T) {
+	newCocoData := &CocoData{
+		Info:        datasetMetaObj.GetInfo(),
+		Licenses:    datasetMetaObj.GetLicense(),
+		// Images:      datasetMetaObj.GetInfo(),
+		// Annotations: datasetMetaObj.GetInfo(),
+		// Categories:  datasetMetaObj.GetInfo(),
+	}
+	var names = []string{
+		"banner",
+		"branch",
+		"cabinet",
+		"ceiling-other",
+
+		"person",
+		"bicycle",
+		"motorcycle",
+		"bus",
+		"truck",
+	}
+
+	var superNames = []string{
+		"building",
+		"furniture-stuff",
+		"ceiling",
+	}
+	// filter by Both
+	ids := datasetMetaObj.GetCatIds(names, superNames)
+	// ids := datasetMetaObj.GetCatIds(names, nil)
+	if len(ids) < 1 {
+		fmt.Println("can not found Categories")
+		return
+	}
+
+    // filter by catids
+	newCocoData.Categories = datasetMetaObj.LoadCats(ids)
+
+	// filter by catids
+	newCocoData.Images = datasetMetaObj.LoadImgs(datasetMetaObj.GetImgIds(ids))
+	if false {
+		for _, v := range newCocoData.Images {
+			fmt.Println("downloading: ", v.CocoURL)
+			cmd := exec.Command("wget", "-O", fmt.Sprintf("../anno_images/%s", v.FileName), v.CocoURL)
+			if err := cmd.Run(); err != nil {   // 运行命令
+				fmt.Println("download failed~!", err)
+			}
+		}
+	}
+	
+    newCocoData.Annotations = datasetMetaObj.LoadAnns(datasetMetaObj.GetAnnIds(nil, ids, nil, 0))
+
+    bJson, _ := json.Marshal(newCocoData)
+    fmt.Println("json result: ", len(bJson))
+
+    var(
+		fileName = "../anno/stuff_val2017_limit.json"
+		file *os.File
+		err error
+	)
+	//文件是否存在
+	if Exists(fileName) {
+		//使用追加模式打开文件
+		file, err = os.OpenFile(fileName,os.O_APPEND,0666)
+		if err!=nil{
+			fmt.Println("打开文件错误：",err)
+			return
+		}
+	}else {
+		//不存在创建文件
+		file ,err = os.Create(fileName)
+		if err !=nil{
+			fmt.Println("创建失败",err)
+			return
+		}
+	}
+	defer file.Close()
+	//写入文件
+	n,err:=io.WriteString(file, string(bJson))
+	if err != nil {
+		fmt.Println("写入错误：",err)
+		return
+	}
+	fmt.Println("写入成功：n=",n)
+
+}
+
+func Exists(path string) bool {
+	_, err := os.Stat(path)    //os.Stat获取文件信息
+	if err != nil {
+		if os.IsExist(err) {
+			return true
+		}
+		return false
+	}
+	return true
+}
+
 
 func Test_decoderExample(t *testing.T) {
 	var err error

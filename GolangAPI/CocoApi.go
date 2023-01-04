@@ -117,6 +117,13 @@ func (api *CocoApi) init(datasetMeta []byte) (err error) {
 	return
 }
 
+func (api *CocoApi) GetLicense() ([]License) {
+	return api.datasetMeta.Licenses
+}
+
+func (api *CocoApi) GetInfo() (Information) {
+	return api.datasetMeta.Info
+}
 
 func (api *CocoApi) GetAnnIds(imgIds, catIds, areaRng []int, iscrowd byte) (ids []int) {
 	var anns map[int]Annotation

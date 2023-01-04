@@ -8,7 +8,9 @@ package coco
 import "C"
 import (
 	"runtime"
+	"fmt"
 	"unsafe"
+	// "runtime/debug"
 )
 
 //RLE contains a pointer to an array of C.RLE
@@ -29,6 +31,8 @@ func (b BB) c() C.BB {
 
 //InitRLEs creates an array of *RLE which holds a pointer to an array of C.RLEs
 func InitRLEs(size uint32) *RLE {
+
+
 	r := new(RLE)
 	r.size = C.siz(size)
 	C.rlesInit(&r.r, r.size)
@@ -37,6 +41,7 @@ func InitRLEs(size uint32) *RLE {
 }
 
 func rlesfree(r *RLE) {
+	fmt.Println(" ============= rlesfree ============== ")
 	C.rlesFree(&r.r, r.size)
 	r = nil
 }
@@ -65,7 +70,9 @@ func compressRLE(cnts []uint32, h, w uint32) *RLE {
 // Decode binary masks encoded via RLE
 //void rleDecode( const RLE *R, byte *mask, siz n );
 func (r *RLE) Decode() (mask []byte) {
+	// defer debug.SetPanicOnFault(debug.SetPanicOnFault(true))
 	mask = make([]byte, r.h*r.w*r.size)
+	fmt.Println("Decode=====", r.r, r.size, r.h*r.w*r.size)
 	C.rleDecode(r.r, (*C.byte)(&mask[0]), r.size)
 	return mask
 }
@@ -185,6 +192,7 @@ func (r *RLE) ToChar() *Char {
 	return x
 }
 func freechar(c *Char) {
+	fmt.Println(" ============= freechar ============== ")
 	C.free(c.Cc)
 	c = nil
 }
