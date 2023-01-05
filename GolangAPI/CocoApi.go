@@ -1,10 +1,13 @@
 package coco
 
+// #include <stdlib.h>
+// #include <stdio.h>
 import "C"
 
 import (
 	"encoding/json"
-	"fmt"
+	// "fmt"
+	"unsafe"
 )
 
 // The following API functions are defined:
@@ -62,9 +65,20 @@ func DecodeSegmentToMask(segmentation SegmentationHelper) (mask []byte) {
 		segmentTmp := segmentation.(*SegmentationRLEUncompressed)
 		segment = EncodeRLEToSegment(segmentTmp)
 	}
-	r := []byte(segment.Counts)
-	c := Char{C.CBytes(r)}
-	rle := c.ToRLE(segment.Size[0], segment.Size[1])
+
+	rleGoBytes := []byte(segment.Counts)
+	// 正确用法
+	charSegment := &Char{
+		Cc: unsafe.Pointer(&rleGoBytes[0]),
+	}
+	// // 错误用法
+	// relBytes := C.CBytes(rleGoBytes)
+	// defer C.free(relBytes)
+	// charSegment := &Char{
+	// 	Cc: relBytes,
+	// }
+
+	rle := charSegment.ToRLE(segment.Size[0], segment.Size[1])
 	mask = rle.Decode()
 	return
 }
@@ -90,7 +104,7 @@ func rleToSegment(rle *RLE, size [2]uint32) *SegmentationRLE {
 func (api *CocoApi) init(datasetMeta []byte) (err error) {
 	err = json.Unmarshal(datasetMeta, &api.datasetMeta)
 	if err != nil {
-		fmt.Println("json.unmarshal failed,err:",err)
+		// fmt.Println("json.unmarshal failed,err:",err)
 		return
 	}
 

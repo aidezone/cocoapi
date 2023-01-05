@@ -1,16 +1,14 @@
 package coco
 
 /*
+#include "../common/maskApi.h"
 #include "../common/maskApi.c"
 #include "stdlib.h"
-
 */
 import "C"
 import (
 	"runtime"
-	"fmt"
 	"unsafe"
-	// "runtime/debug"
 )
 
 //RLE contains a pointer to an array of C.RLE
@@ -31,8 +29,6 @@ func (b BB) c() C.BB {
 
 //InitRLEs creates an array of *RLE which holds a pointer to an array of C.RLEs
 func InitRLEs(size uint32) *RLE {
-
-
 	r := new(RLE)
 	r.size = C.siz(size)
 	C.rlesInit(&r.r, r.size)
@@ -41,7 +37,6 @@ func InitRLEs(size uint32) *RLE {
 }
 
 func rlesfree(r *RLE) {
-	fmt.Println(" ============= rlesfree ============== ")
 	C.rlesFree(&r.r, r.size)
 	r = nil
 }
@@ -72,7 +67,6 @@ func compressRLE(cnts []uint32, h, w uint32) *RLE {
 func (r *RLE) Decode() (mask []byte) {
 	// defer debug.SetPanicOnFault(debug.SetPanicOnFault(true))
 	mask = make([]byte, r.h*r.w*r.size)
-	fmt.Println("Decode=====", r.r, r.size, r.h*r.w*r.size)
 	C.rleDecode(r.r, (*C.byte)(&mask[0]), r.size)
 	return mask
 }
@@ -192,7 +186,6 @@ func (r *RLE) ToChar() *Char {
 	return x
 }
 func freechar(c *Char) {
-	fmt.Println(" ============= freechar ============== ")
 	C.free(c.Cc)
 	c = nil
 }
@@ -204,6 +197,7 @@ func (c *Char) ToRLE(h, w uint32) *RLE {
 	r.h = (C.siz)(h)
 	r.w = (C.siz)(w)
 	C.rleFrString(r.r, (*C.char)(c.Cc), (C.siz)(h), (C.siz)(w))
+	// runtime.SetFinalizer(c, freechar)
 	return r
 }
 
