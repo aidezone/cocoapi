@@ -201,3 +201,13 @@ func (c *Char) ToRLE(h, w uint32) *RLE {
 	return r
 }
 
+//ToRLE Convert from compressed string representation of encoded mask.
+//void rleFrStringWithByteLen( RLE *R, char *s, siz h, siz w, siz bl);
+func (c *Char) ToRLEWithByteLen(h, w, bl uint32) *RLE {
+	r := InitRLEs(1)
+	r.h = (C.siz)(h)
+	r.w = (C.siz)(w)
+	C.rleFrStringWithByteLen(r.r, (*C.char)(c.Cc), (C.siz)(h), (C.siz)(w), (C.siz)(bl))
+	// runtime.SetFinalizer(c, freechar)
+	return r
+}

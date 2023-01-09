@@ -229,3 +229,19 @@ void rleFrString( RLE *R, char *s, siz h, siz w ) {
   }
   rleInit(R,h,w,m,cnts); free(cnts);
 }
+
+void rleFrStringWithByteLen( RLE *R, char *s, siz h, siz w, siz bl ) {
+  siz m=0, p=0, k; long x; int more; uint *cnts;
+  // while( s[m] ) m++; cnts=malloc(sizeof(uint)*m); m=0;
+  m = bl; cnts=malloc(sizeof(uint)*m); m=0;
+  while( s[p] && p < bl) {
+    x=0; k=0; more=1;
+    while( more ) {
+      char c=s[p]-48; x |= (c & 0x1f) << 5*k;
+      more = c & 0x20; p++; k++;
+      if(!more && (c & 0x10)) x |= -1 << 5*k;
+    }
+    if(m>2) x+=(long) cnts[m-2]; cnts[m++]=(uint) x;
+  }
+  rleInit(R,h,w,m,cnts); free(cnts);
+}

@@ -6,7 +6,6 @@ import "C"
 
 import (
 	"encoding/json"
-	// "fmt"
 	"unsafe"
 )
 
@@ -77,8 +76,11 @@ func DecodeSegmentToMask(segmentation SegmentationHelper) (mask []byte) {
 	// charSegment := &Char{
 	// 	Cc: relBytes,
 	// }
-
-	rle := charSegment.ToRLE(segment.Size[0], segment.Size[1])
+	// fmt.Println("rleGoBytes len: ", len(rleGoBytes))
+	// // 旧版用法
+	// rle := charSegment.ToRLE(segment.Size[0], segment.Size[1])
+	// 新版增加长度参数，避免越界
+	rle := charSegment.ToRLEWithByteLen(segment.Size[0], segment.Size[1], uint32(len(rleGoBytes)))
 	mask = rle.Decode()
 	return
 }
@@ -94,7 +96,8 @@ func EncodeRLEToSegment(segmentation *SegmentationRLEUncompressed) *Segmentation
 }
 
 func rleToSegment(rle *RLE, size [2]uint32) *SegmentationRLE {
-	countsString := C.GoString((* C.char)(rle.ToChar().Cc)) // segmentation.counts
+	charPointer := (* C.char)(rle.ToChar().Cc)
+	countsString := C.GoString(charPointer) // segmentation.counts
 	return &SegmentationRLE{
 		Counts: countsString,
 		Size: size,

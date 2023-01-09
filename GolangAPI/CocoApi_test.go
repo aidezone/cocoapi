@@ -57,12 +57,34 @@ func Test_DecodeSegmentToMask2(t *testing.T) {
 	for i:=0; i< 10000; i++ {
 		mask := DecodeSegmentToMask(&SegmentationRLE{
 			Counts: counts,
-			Size: [2]uint32{375, 500},
+			Size: [2]uint32{500, 375},
 		})
 	    fmt.Println("mask: ", len(mask), i)
 	}
-	
+}
 
+func Test_DecodeSegmentToMask3(t *testing.T) {
+	counts := "XS^51;0Gb0g8_O`G3l0LoNP2\\8WNdG27GFm2Y8Y1O9iGcKO=Y7f4O1O1EkJTI\\5Z6eJfI02e5U6?K5O12N0000L4O1O1F:O1000000O11OO10000000O10O1001O00O100O1O12N00O2O01O001ON2O1O1O11O1O001OQL"
+	// for i:=0; i< 10000; i++ {
+	mask := DecodeSegmentToMask(&SegmentationRLE{
+		Counts: counts,
+		Size: [2]uint32{500, 375},
+	})
+    fmt.Println("mask: ", len(mask), len(counts))
+    seg := EncodeMaskToSegment(mask, [2]uint32{500, 375})
+    fmt.Println("seg: ", seg.Counts, len(seg.Counts))
+	mask2 := DecodeSegmentToMask(seg)
+	for k, v := range mask2{
+		if v != mask[k] {
+    		fmt.Println("mask diff: ", k, v, mask[k])
+		}
+	}
+	for k, v := range mask{
+		if v != mask2[k] {
+    		fmt.Println("mask2 diff: ", k, v, mask[k])
+		}
+	}
+    fmt.Println("mask diff finish")
 }
 
 func Test_compressRLE(t *testing.T) {

@@ -58,3 +58,6 @@ char* rleToString( const RLE *R );
 
 /* Convert from compressed string representation of encoded mask. */
 void rleFrString( RLE *R, char *s, siz h, siz w );
+
+/* Convert from compressed string representation of encoded mask. with all bytes length */
+void rleFrStringWithByteLen( RLE *R, char *s, siz h, siz w, siz bl );
